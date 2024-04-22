@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { socket } from "./socket";
 import ConnectionStatus from "./components/ConnectionStatus";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./components/ui/alert-dialog";
 
 type RoomId = string;
 
@@ -10,13 +19,14 @@ function App() {
   const [roomIdToJoin, setRoomIdToJoin] = useState<RoomId>("");
   const [messages, setMessages] = useState<string[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   const [cubeState, setCubeState] = useState<string[]>([]);
   const [queueState, setQueueState] = useState<string[]>([]);
 
   useEffect(() => {
     function onCreateRoomError({ message }: { message: string }) {
-      setMessages((messages) => [...messages, `create_room_error: ${message}`]);
+      setErrors((errors) => [...errors, message]);
     }
 
     function onJoinRoom({
@@ -38,7 +48,7 @@ function App() {
     }
 
     function onJoinRoomError({ message }: { message: string }) {
-      setMessages((messages) => [...messages, `join_room_error: ${message}`]);
+      setErrors((errors) => [...errors, message]);
     }
 
     socket.on("create_room_error", onCreateRoomError);
@@ -53,10 +63,8 @@ function App() {
   }, []);
 
   const createRoom = () => {
-    console.log(socket.connected);
-    console.log("creating room");
     socket.emit("create_room", {
-      username: "Luiz",
+      username,
       cubeState,
       queueState,
     });
@@ -68,13 +76,29 @@ function App() {
 
   const sendMessage = () => {
     // socket.emit("send_message", { roomId, message: messageInput });
-    console.log("not really disabled", roomId);
     setMessageInput("");
   };
 
   return (
     <div className="w-full h-screen flex flex-col gap-3 items-center justify-between p-4 relative">
       <ConnectionStatus />
+      <AlertDialog open={errors.length > 0}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-700">Error</AlertDialogTitle>
+            <AlertDialogDescription>
+              {errors.map((error) => (
+                <div>{error}</div>
+              ))}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="justify-center">
+            <AlertDialogAction onClick={() => setErrors([])}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="text-9xl bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-transparent bg-clip-text font-mono">
         Rubik's chat
