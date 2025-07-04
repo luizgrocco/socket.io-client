@@ -1,35 +1,21 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import React from "react";
 import { socket } from "../socket";
+import { useAtom } from "jotai";
+import { connectionAtom } from "@/store/connection";
+import { useRegisterSocketEvent } from "@/lib/hooks";
 
-const ConnectionStatus = () => {
-  const [connected, setConnected] = useState(false);
+const ConnectionStatus: React.FC = () => {
+  const [connected, setConnected] = useAtom(connectionAtom);
 
-  useEffect(() => {
-    // Server events, debugging purposes
-    function onConnectEvent() {
-      setConnected(true);
-    }
-
-    function onDisconnectEvent() {
-      setConnected(false);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function onConnectErrorEvent(error: any) {
-      console.error(error);
-    }
-
-    socket.on("connect", onConnectEvent);
-    socket.on("disconnect", onDisconnectEvent);
-    socket.on("connect_error", onConnectErrorEvent);
-
-    return () => {
-      socket.off("connect", onConnectEvent);
-      socket.off("disconnect", onDisconnectEvent);
-      socket.off("connect_error", onConnectErrorEvent);
-    };
-  }, []);
+  useRegisterSocketEvent("connect", function onConnect() {
+    setConnected(true);
+  });
+  useRegisterSocketEvent("disconnect", function onDisconnect() {
+    setConnected(false);
+  });
+  useRegisterSocketEvent("connect_error", function onConnectError<T>(error: T) {
+    console.error(error);
+  });
 
   const toggleConnection = () => {
     if (connected) {
